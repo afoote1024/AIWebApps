@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saddleback Bakery Blog Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #faf7f2;
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        .bakery-card {
+            background: white;
+            border: 1px solid #eaddcf;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #8b5e3c;
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #724d31;
+        }
+        /* Styling the AI generated HTML */
+        #outputBody h3 {
+            font-size: 1.5rem;
+            color: #444;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            border-left: 4px solid #8b5e3c;
+            padding-left: 1rem;
+        }
+        #outputBody p {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="bg-white border-b border-stone-200 py-8 px-4 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl text-stone-800 mb-2">Saddleback Bakery</h1>
+            <p class="text-stone-500 italic uppercase tracking-widest text-sm">Artisanal Blog Post Generator</p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-5 space-y-6">
+            <section class="bakery-card rounded-xl p-6">
+                <h2 class="text-xl text-stone-800 mb-4 flex items-center">
+                    <span class="mr-2">🥐</span> Seasonal Inspirations
+                </h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="setSuggestion('Pumpkin Spice Delights for Fall', 'Focus on the warmth of cinnamon, nutmeg, and our house-made pumpkin purée.')" class="text-left p-3 rounded-lg border border-stone-100 hover:bg-orange-50 hover:border-orange-200 transition-colors group">
+                        <p class="font-bold text-stone-700 group-hover:text-orange-800">Fall: Pumpkin Spice Delights</p>
+                        <p class="text-xs text-stone-500">Warm aromas and cozy textures.</p>
+                    </button>
+                    <button onclick="setSuggestion('Summer Lemon Tart Specials', 'Highlighting the zest of Sicilian lemons and our signature buttery shortcrust.')" class="text-left p-3 rounded-lg border border-stone-100 hover:bg-yellow-50 hover:border-yellow-200 transition-colors group">
+                        <p class="font-bold text-stone-700 group-hover:text-yellow-800">Summer: Lemon Tart Specials</p>
+                        <p class="text-xs text-stone-500">Bright, citrusy, and refreshing.</p>
+                    </button>
+                    <button onclick="setSuggestion('Valentine’s Day Chocolate Collection', 'Decadent dark chocolate truffles and heart-shaped cocoa nib cookies.')" class="text-left p-3 rounded-lg border border-stone-100 hover:bg-pink-50 hover:border-pink-200 transition-colors group">
+                        <p class="font-bold text-stone-700 group-hover:text-pink-800">Valentine: Chocolate Collection</p>
+                        <p class="text-xs text-stone-500">Rich, romantic, and indulgent.</p>
+                    </button>
+                </div>
+            </section>
+
+            <section class="bakery-card rounded-xl p-6">
+                <h2 class="text-xl text-stone-800 mb-4">Draft Your Story</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-stone-600 mb-1">Blog Topic</label>
+                        <input id="blogTopic" type="text" placeholder="e.g., The Secret to Our Sourdough" 
+                            class="w-full p-3 rounded-lg border border-stone-200 focus:ring-2 focus:ring-stone-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-stone-600 mb-1">Your Draft / Notes</label>
+                        <textarea id="userDraft" rows="6" placeholder="Write a few sentences or bullet points here..." 
+                            class="w-full p-3 rounded-lg border border-stone-200 focus:ring-2 focus:ring-stone-400 outline-none"></textarea>
+                    </div>
+                    <button id="generateBtn" onclick="generateBlogPost()" class="w-full btn-primary py-3 rounded-lg font-bold shadow-md flex items-center justify-center">
+                        <span id="btnText">Rise & Shine (Generate)</span>
+                        <div id="btnLoading" class="hidden ml-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-7">
+            <div id="previewContainer" class="bakery-card rounded-xl p-8 min-h-[600px] flex flex-col relative">
+                <div id="emptyState" class="flex-grow flex flex-col items-center justify-center text-stone-400">
+                    <p class="text-5xl mb-4">🥖</p>
+                    <p>Your blog post will appear here...</p>
+                </div>
+
+                <div id="blogContent" class="hidden flex-grow">
+                    <div class="flex justify-between items-start mb-6 border-b border-stone-100 pb-4">
+                        <div id="exportControls">
+                            <button onclick="exportToPDF()" class="text-sm font-bold text-stone-500 hover:text-stone-800 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Download PDF
+                            </button>
+                        </div>
+                        <span class="text-xs uppercase tracking-widest text-stone-400">Preview Mode</span>
+                    </div>
+                    
+                    <article class="max-w-none">
+                        <h1 id="outputTitle" class="text-3xl text-stone-800 font-bold mb-6"></h1>
+                        <div id="outputBody" class="text-stone-700 leading-relaxed text-lg"></div>
+                    </article>
+                </div>
+
+                <div id="errorBox" class="hidden absolute bottom-4 left-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-8 bg-stone-800 text-stone-400 text-center text-sm">
+        <p>&copy; 2025 Saddleback Bakery. Crafted with care and flour.</p>
+    </footer>
+
+    <script>
+        const apiKey = ""; 
+
+        function setSuggestion(topic, draft) {
+            document.getElementById('blogTopic').value = topic;
+            document.getElementById('userDraft').value = draft;
+        }
+
+        async function fetchWithRetry(payload, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) return await response.json();
+                    if (response.status !== 429 && response.status < 500) break;
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                }
+                if (i < retries - 1) await new Promise(r => setTimeout(r, delays[i]));
+            }
+            throw new Error("Failed after several retries");
+        }
+
+        async function generateBlogPost() {
+            const topic = document.getElementById('blogTopic').value;
+            const draft = document.getElementById('userDraft').value;
+            const generateBtn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            const errorBox = document.getElementById('errorBox');
+            const emptyState = document.getElementById('emptyState');
+            const blogContent = document.getElementById('blogContent');
+            const outputTitle = document.getElementById('outputTitle');
+            const outputBody = document.getElementById('outputBody');
+
+            if (!topic || !draft) {
+                showError("Please fill in both the topic and a rough draft.");
+                return;
+            }
+
+            generateBtn.disabled = true;
+            btnText.innerText = "Kneading the dough...";
+            btnLoading.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+
+            const systemPrompt = `You are a warm, artisanal blog writer for Saddleback Bakery.
+            Expand input into a 400-600 word post.
+            CRITICAL: Structure your 'body' string using HTML tags. 
+            - Use <h3>TITLE</h3> for subheadings.
+            - Use <p>CONTENT</p> for paragraphs.
+            - Include a final <h3>Baker's Tip</h3>.
+            Return result ONLY as JSON: {"title": "...", "body": "..."}`;
+
+            const userQuery = `Topic: ${topic}\nUser Notes: ${draft}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "string" },
+                            body: { type: "string" }
+                        },
+                        required: ["title", "body"]
+                    }
+                }
+            };
+
+            try {
+                const result = await fetchWithRetry(payload);
+                
+                if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
+                    const content = JSON.parse(result.candidates[0].content.parts[0].text);
+                    
+                    outputTitle.textContent = content.title;
+                    outputBody.innerHTML = content.body;
+                    
+                    emptyState.classList.add('hidden');
+                    blogContent.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid API response structure");
+                }
+
+            } catch (err) {
+                showError("The oven failed to heat up. Please try again.");
+                console.error(err);
+            } finally {
+                generateBtn.disabled = false;
+                btnText.innerText = "Rise & Shine (Generate)";
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.innerText = msg;
+            errorBox.classList.remove('hidden');
+            setTimeout(() => errorBox.classList.add('hidden'), 5000);
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const title = document.getElementById('outputTitle').innerText;
+            const bodyHTML = document.getElementById('outputBody').innerHTML;
+
+            // Branding
+            doc.setFont("times", "bold"); doc.setFontSize(22);
+            doc.text("Saddleback Bakery", 105, 20, { align: "center" });
+            doc.setFontSize(10); doc.setFont("helvetica", "italic");
+            doc.text("Artisanal Blog Post Export", 105, 26, { align: "center" });
+            doc.setDrawColor(200, 200, 200); doc.line(20, 30, 190, 30);
+
+            // Title
+            doc.setFontSize(18); doc.setFont("times", "bold");
+            const splitTitle = doc.splitTextToSize(title, 170);
+            doc.text(splitTitle, 20, 45);
+
+            // Parsing HTML tags for PDF
+            let currentY = 50 + (splitTitle.length * 7);
+            const docWidth = 170;
+
+            const segments = bodyHTML.split(/(<h3.*?>.*?<\/h3>|<p.*?>.*?<\/p>)/g);
+
+            segments.forEach(segment => {
+                if (!segment || !segment.trim()) return;
+
+                if (segment.startsWith('<h3>')) {
+                    const text = segment.replace(/<h3.*?>|<\/h3>/g, "");
+                    doc.setFontSize(14);
+                    doc.setFont("times", "bold");
+                    const lines = doc.splitTextToSize(text, docWidth);
+                    doc.text(lines, 20, currentY);
+                    currentY += (lines.length * 8);
+                } else if (segment.startsWith('<p>')) {
+                    const text = segment.replace(/<p.*?>|<\/p>/g, "");
+                    doc.setFontSize(11);
+                    doc.setFont("times", "normal");
+                    const lines = doc.splitTextToSize(text, docWidth);
+                    doc.text(lines, 20, currentY);
+                    currentY += (lines.length * 6);
+                }
+                
+                if (currentY > 270) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+            });
+
+            doc.save(`Saddleback_Blog.pdf`);
+        }
+    </script>
+</body>
+</html>
